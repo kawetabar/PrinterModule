@@ -7,6 +7,7 @@ https://stackoverflow.com/questions/72012485/add-a-local-printer-port-in-powersh
 https://www.reddit.com/r/PowerShell/comments/4v271r/pause_printer/
 https://github.com/darkoperator/OctoPS/blob/master/Functions/Suspend-OctoPSJob.ps1
 https://www.windows-commandline.com/manage-print-jobs-command-line/
+https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/analyzing-and-removing-print-jobs
 
 
 -----------------------------------------------------
@@ -163,3 +164,23 @@ Resume a paused print job
 
 wmic printjob where jobid=<jobnumber> resume
 ----------------------------------------------
+
+you could filter existing print jobs, and, for example, remove print jobs that have been completed or had errors. This will list all print jobs that had errors or have completed:
+
+$ComputerName = $env:COMPUTERNAME
+
+Get-Printer -ComputerName $ComputerName |  ForEach-Object { 
+  Get-PrintJob -PrinterName $_.Name -ComputerName $ComputerName |
+    Where-Object { $_.JobStatus -eq 'Complete' -or $_.JobStatus -eq 'Error' -or $_.JobStatus -eq 'Printed'}
+ } 
+
+To remove these print jobs, simply add Remove-PrintJob:
+
+$ComputerName = $env:COMPUTERNAME
+
+Get-Printer -ComputerName $ComputerName |  ForEach-Object { 
+  Get-PrintJob -PrinterName $_.Name -ComputerName $ComputerName |
+    Where-Object { $_.JobStatus -eq 'Complete' -or $_.JobStatus -eq 'Error' -or $_.JobStatus -eq 'Printed'}
+ } |
+ Remove-PrintJob -CimSession $ComputerName
+----------------------------------------------------
