@@ -6,7 +6,7 @@ https://techexpert.tips/powershell/powershell-display-pop-up-message/
 https://stackoverflow.com/questions/72012485/add-a-local-printer-port-in-powershell
 https://www.reddit.com/r/PowerShell/comments/4v271r/pause_printer/
 https://github.com/darkoperator/OctoPS/blob/master/Functions/Suspend-OctoPSJob.ps1
-
+https://www.windows-commandline.com/manage-print-jobs-command-line/
 
 
 -----------------------------------------------------
@@ -116,3 +116,50 @@ Remove-Item -Path "$env:SystemRoot\System32\spool\PRINTERS\*.*"
 Start-Service -Name Spooler
 ------------------------------------------
 
+First, let’s see the list of jobs we have in the queues. For this you need to run the below command.
+
+wmic printjob get
+
+The above will list all the jobs in progress/queue. It prints lot of details about each printer job. To print only the minimal information we are interested in, we can use the below command.
+
+wmic printjob get jobid, document, jobstatus
+
+Example:
+
+c:\>wmic printjob get jobid, document, jobstatus
+Document      JobId  JobStatus
+BankStatement  2      Error/Restart
+
+Cancel print job
+You can cancel a print job using the below command. We need to provide the job id in the command.
+
+wmic printjob where jobid=<jobnumber> delete
+
+Example:
+
+wmic printjob where jobid=2 delete
+
+Pause a print job
+
+This command too would require you to specify the job id.
+
+wmic printjob where jobid=<jobnumber> pause
+
+Example:
+
+c:\>wmic printjob where jobid=2 pause
+Executing (\\WINCMD-PC\ROOT\CIMV2:Win32_PrintJob.Name="Myprinter, 2")->Pause()
+Method execution successful.
+Out Parameters:
+instance of __PARAMETERS
+{
+        ReturnValue = 0;
+};
+c:\>wmic printjob get jobid, document, jobstatus
+Document    JobId  JobStatus
+BankStatement  2      Paused
+
+Resume a paused print job
+
+wmic printjob where jobid=<jobnumber> resume
+----------------------------------------------
