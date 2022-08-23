@@ -1,0 +1,118 @@
+Get-WMIObject Win32_PerfFormattedData_Spooler_PrintQueue |
+ Select Name, @{Expression={$_.jobs};Label="CurrentJobs"}, TotalJobsPrinted, JobErrors
+
+https://docs.microsoft.com/en-us/answers/questions/243316/how-to-34microsoft-windows-printserviceoperational.html
+https://techexpert.tips/powershell/powershell-display-pop-up-message/
+https://stackoverflow.com/questions/72012485/add-a-local-printer-port-in-powershell
+https://www.reddit.com/r/PowerShell/comments/4v271r/pause_printer/
+https://github.com/darkoperator/OctoPS/blob/master/Functions/Suspend-OctoPSJob.ps1
+
+
+
+-----------------------------------------------------
+[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
+[System.Windows.Forms.MessageBox]::Show('Automatic logoff after 1 hour of inactivity','WARNING')
+
+
+-------------------------------------------
+Write-Host 'Pausing printers...'
+gwmi win32_printer | % {$null = $_.pause()}
+
+# Write-Host 'Deleting jobs...'
+# gwmi win32_printjob | % {$null = $_.delete()}
+
+Write-Host 'Resuming printers...'
+gwmi win32_printer | % {$null = $_.resume()}
+
+Write-Host 'Done!'
+-------------------------------------------
+#Automatically clear an errored Print Spooler using PowerShell
+#To run as a schedule task setup the following - powershell.exe -ExecutionPolicy Bypass C:\Clear_errored_spooler.ps1
+Clear-Host
+$DateTime = Get-Date -Format G
+
+Start-Transcript -Path C:\QueueLog.txt -Append
+Write-Host "Checking printers and queues for errors"
+#Get any documents from all printers that in an error state
+$Errors = @(Get-Printer | Get-PrintJob | Where {$_.JobStatus -NotMatch "Printing|Printed"}).Count
+
+If ($Errors -gt 0) {
+	Write-Warning "$DateTime - $Errors job(s) found in error in the print spooler, clearing!"
+	Stop-Service spooler
+Start-Sleep -s 5
+    Remove-Item -Path "C:\Windows\System32\spool\PRINTERS\*.SPL" -Force
+    Remove-Item -Path "C:\Windows\System32\spool\PRINTERS\*.SHD" -Force
+    Start-Sleep -s 5
+	Start-Service spooler
+	Write-Host "Printer queues have been cleared"
+} else {
+	Write-Host "$DateTime - No job(s) found in error in the print spooler, exiting!"
+}
+Stop-Transcript
+--------------------------------------------------
+
+Windows Server/Windows 10: How to delete stuck Print Jobs with PowerShell (Spooler)
+
+The Functionality
+
+The script does the following:
+
+    stops the spooler service
+    deletes all content of C:\Windows\System32\spool\PRINTERS\
+    starts the spooler service
+
+do {
+Write-Host '\\\\\\\\\\\\\\ This script deletes all print jobs. \\\\\\\\\\\\\\'
+''
+$sure=Read-Host "Are you sure you want to delete all Print Jobs on $env:computername (Y/N)"
+''
+If ($sure -eq 'Y')
+ 
+{
+'================================================================='
+ 
+Stop-Service spooler
+Write-Host '1. Stopping Spooler Service ...' -ForegroundColor Green
+Remove-Item -Path $env:windir\system32\spool\PRINTERS\*.*
+Write-Host "2. Clearing content in $env:windir\system32\spool\PRINTERS" -ForegroundColor Green
+Write-Host '3. Starting Spooler Service ...' -ForegroundColor Green
+$start=Start-Service Spooler -ErrorAction Ignore
+If ((Get-Service spooler).status -eq 'Stopped')
+{Write-Host '!!! Error. Spooler could not be started or stopped. Check Service. !!!' -ForegroundColor Red}
+ 
+'================================================================='
+''
+ 
+PAUSE
+}
+}
+while ($sure -ne 'N')
+
+--------------------------------------------------------
+
+Restart Print Spooler
+$PrintSpooler = Get-Service -Name Spooler
+
+# Get the Print Spooler Service status (Running or Stopped)
+$PrintSpooler
+
+# Logic to check Print Spooler Service and restart if not running
+
+if($PrintSpooler.Status -eq 'stopped')
+{
+    # Start Print Spooler Service on local computer
+    Start-Service $PrintSpooler
+}
+
+# Check the Print Spool Service status 
+$PrintSpooler
+----------------------------------------------------------
+
+Delete Printer Spooler Queue Files
+# To delete the Printer Spooler files
+Remove-Item -Path "$env:SystemRoot\System32\spool\PRINTERS\*.*"
+
+# Start print spooler service
+Start-Service -Name Spooler
+------------------------------------------
+
