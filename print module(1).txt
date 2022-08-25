@@ -184,3 +184,52 @@ Get-Printer -ComputerName $ComputerName |  ForEach-Object {
  } |
  Remove-PrintJob -CimSession $ComputerName
 ----------------------------------------------------
+
+Markdown (GitHub flavored):
+
+# Holt sich die korrekte Urzeit
+$CurrentTime = Get-Date
+# Zeit-Differenz für die Anzeige - nur zum prüfen
+$myTime1 = (Get-Date).addminutes(-2)
+# Zeit-Differenz zum löschen
+$myTime2 = (Get-Date).addminutes(-3)
+# Holt den realen PCNamen aus der Umgebung
+$PCname = $env:computername
+# Pfad und Name der LOG-Datei
+$logFile = ".\delete-old-printJobs.log"
+
+# Prüft die Jobs auf ihr Alter und gibt eine Anziege der betreffenden Jobs aus
+# für den effektiven Ablauf des Scripts nicht erforderlich
+# kann später gelöscht werden
+Get-Printer -ComputerName $PCname | Foreach-Object {
+    $Printer = $_
+    $Printer | Get-Printjob |
+        Where-Object {$_.SubmittedTime -lt $myTime1 } |
+        Select-Object @{name="Name";expression={$_.printerName}},
+        @{name="Submitted Time";expression={$_.SubmittedTime}},
+        @{name="Job-ID";expression={$_.ID}},
+        @{n='Time Difference';e={[math]::Truncate(($CurrentTime - $_.SubmittedTime).TotalMinutes)}} |
+        Sort-Object -Property jobstatus -Descending
+}
+
+
+# Hole alle Druck-Jobs
+$printJobs = Get-WmiObject Win32_PrintJob
+
+ForEach ($printJob in $printJobs) {
+  # konvertiere WMI time zu ordentlicher .NET DateTime
+  $jobTime = [System.Management.ManagementDateTimeConverter]::ToDateTime($printJob.TimeSubmitted)
+ 
+  # Wenn "TimeSubmitted" des Jobs älter ist als myTime2 - lösche des Job
+  if ($jobTime -lt $myTime2) {
+    $outputString = "Deleting job {0} by user {1} submitted on {2}" -f $printJob.JobId,$printJob.owner,$jobTime
+    Write-Verbose $outputString
+    ECHO $outputString
+    # schreibe die Erfolgsmeldung in eine LOG-Datei
+    Out-File -FilePath $logFile -InputObject $outputString -Encoding UTF8 -Width 70 -Append
+    $printJob.Delete()
+  }
+}
+
+-------------------------------------------------------------
+
