@@ -8,7 +8,8 @@ https://www.reddit.com/r/PowerShell/comments/4v271r/pause_printer/
 https://github.com/darkoperator/OctoPS/blob/master/Functions/Suspend-OctoPSJob.ps1
 https://www.windows-commandline.com/manage-print-jobs-command-line/
 https://community.idera.com/database-tools/powershell/powertips/b/tips/posts/analyzing-and-removing-print-jobs
-
+https://powershell.one/wmi/root/cimv2/win32_printjob
+https://livebook.manning.com/book/powershell-and-wmi/chapter-10/29
 
 -----------------------------------------------------
 [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
@@ -185,8 +186,6 @@ Get-Printer -ComputerName $ComputerName |  ForEach-Object {
  Remove-PrintJob -CimSession $ComputerName
 ----------------------------------------------------
 
-Markdown (GitHub flavored):
-
 # Holt sich die korrekte Urzeit
 $CurrentTime = Get-Date
 # Zeit-Differenz für die Anzeige - nur zum prüfen
@@ -230,6 +229,9 @@ ForEach ($printJob in $printJobs) {
     $printJob.Delete()
   }
 }
+ ---------------------------------------------------------
 
--------------------------------------------------------------
+Suspend-PrintJob -PrinterName "PrinterName" -ID 1
+--------------------------------------------
+
 
